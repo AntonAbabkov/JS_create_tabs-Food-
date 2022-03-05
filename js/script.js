@@ -1,4 +1,4 @@
-"use stricth";
+"use strict";
 
 window.addEventListener('DOMContentLoaded', () => {
     //Табы
@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     //Таймер
 
-    const deadLine = '2022-02-11'; //Установил дату окончания акции
+    const deadLine = '2022-05-11'; //Установил дату окончания акции
 
     function getTimeRemaining(endTime) { //выясняем, сколько осталось времени
         const t = Date.parse(endTime) - Date.parse(new Date()); //Date.parse(endTime) - переводит установленную дату в миллисекунды. - Date.parse(new Date()) - узнаёт текущее время в миллисекундах и отнимает их от изначальной даты.
@@ -96,7 +96,6 @@ window.addEventListener('DOMContentLoaded', () => {
     //Modal window
     /* переменные */
     const modalTrigger = document.querySelectorAll('[data-modal]'), //2 кнопки "Связаться с нами"
-          modalClose = document.querySelector('[data-close]'), //Закрывающий крестик
           modal = document.querySelector('.modal'); //Само модельное окно
 
     function openModal() {
@@ -115,11 +114,9 @@ window.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('show');
         document.body.style.overflow = ''; //включает прокрутку экрана.
     }
-    //Событие закрытия модельного окна
-    modalClose.addEventListener('click', closeModal);
 
     modal.addEventListener('click', (e) => { //Событие для закрытия модельного окна при нажатии на подложку
-        if (e.target === modal) {
+        if (e.target === modal || e.target.getAttribute('data-close') == '') {
             closeModal();
         }
     });
@@ -130,7 +127,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-   /*  const modalTimerId = setTimeout(openModal, 5000); */ //Переменная с таймером на 30 сек, через 30 сек откроется модельное окно для связи.
+    const modalTimerId = setTimeout(openModal, 50000); //Переменная с таймером.
 
     //Код для открытия модельного окна при прокрутке до нижнего конца экрана.
     function showModalByScroll() {
@@ -216,4 +213,93 @@ window.addEventListener('DOMContentLoaded', () => {
         'menu__item',
         'big'
     ).render();
+
+    //Код для отправки информации из форм на сервер (php)
+    const forms = document.querySelectorAll('form'); //Получаем все формы по тегу form
+
+    const message = { //Создаём объект который будет содержать различные фразы для клиента
+        loading: 'img/form/spinner.svg',
+        success: 'Спасибо, скоро мы с Вами свяжемся',
+        fail: 'Что-то пошло не так'
+    };
+
+    forms.forEach(item => { //при помощи цикла применяем функцию postData к каждой форме
+        postData(item);
+    });
+
+    //Функция отвечающая за постинг данных
+    function postData(form) {
+        form.addEventListener('submit', (e) => { 
+            e.preventDefault();                                 //используем событие, что бы отменить стандарное поведение браузера
+
+            const statusMessage = document.createElement('img');//Создаём переменную, в которую будет помещёна картинка spinner.svg
+            statusMessage.src = message.loading;                //Добавляем src атрибут.
+            //Добавляем CSS стили, для корректного отображения svg файла со спиннером
+            statusMessage.style.cssText = `
+                display: block;
+                margin: 0 auto;
+            `;
+
+            form.insertAdjacentElement('afterend', statusMessage); //Метод insertAdjacentElement позволяет вставить элемент в любое место страницы. первое свойство - куда вставляем, второе - что вставляем.         
+
+            const formData = new FormData(form);    //Создаём перемунную, в которую помещяем конструктор FormData. FormData - это специальный объект, который позволяет собрать все данные с определённой формы, которую заполнил пользователь.
+
+            const object = {};                      //Создаём объект, в который будем помещать полученные данные для дальнейшей конвертации в формат JSON
+            formData.forEach(function(value, key){  //Перебираем formData
+                object[key] = value;                //Обращаемся к пустому объекту object и передаём в него данные. В итоге получается обычный объект, который можно свободно конвертировать в JSON
+            });
+
+            //Fetch API предоставляет интерфейс JS для работы с запросами и ответами HTTP. Он также предоставляет глобальный метод fetch() (en-US), который позволяет легко и логично получать ресурсы по сети асинхронно.
+            //Сам fetch запрос. FETCH работает на промисах (Promise)
+            fetch('server.php', { //Настройки запроса указываются в объекте после URL. В этом объекте должно быть минимум 2 свойства. Method и Body
+                method: 'POST',                                   //Метод POST или GET
+                body: JSON.stringify(object),                     //Body. Указали, что отправляем.
+                headers: {                                     //Headers. Заголовки желательно тоже всегда указывать, что бы было понятно, что мы отправляем.
+                    'Content-type': 'application/json'
+                }
+            })
+            .then(data => data.text())
+            .then(data => { //Действия при удачно выполненном запросе
+                console.log(data);
+                showThaksModal(message.success);             //Выводим сообщение о успехе
+                statusMessage.remove();                      //Удаление сообщения
+            }).catch(() => { //Действия при неудачном запросе
+                showThaksModal(message.fail);                //Выводим сообщение о ошибке
+            }).finally(() => { //Действия в самом конце.
+                form.reset();                                //Метод reset очищяет форму
+            });
+        });
+    }
+    
+    //Функция для создания нового окна, вместо окна modal__dialog, с сообщением и картинкой для пользователя.
+    function showThaksModal(message) {
+        //Код для скрытия старого контента
+        const prevModalDialog = document.querySelector('.modal__dialog'); //Создаём переменную в которую помещяем существующий modal__dialog.
+
+        prevModalDialog.classList.add('hide');  //Добавил класс hide со свойством display: none, для скрытия окна modal__dialog.
+        openModal(); //Функция openModal отвечает за открытие модельных окон
+
+        //Код для создания нового контента
+        const thanksModal = document.createElement('div'); //Создал новый блок
+        thanksModal.classList.add('modal__dialog');        //Присвоил ему класс
+        //Создаём шаблон для блока.
+        thanksModal.innerHTML = `
+            <div class="modal__content">
+                <div class="modal__close" data-close>×</div>
+                <div class="modal__title">${message}</div>
+            </div>
+        `;
+
+        document.querySelector('.modal').append(thanksModal); //Добавляем созданный блок на страницу
+        //Код для скрытия окна с благодарностью и активации изначального кона modal__dialog на случай, если клиент захочет вернуть на пару шагов и заполнить форму ещё раз
+        setTimeout(() => {
+            thanksModal.remove();                       //Удаляем блок с благодарностью
+            prevModalDialog.classList.add('show');      //Добавляем класс show со свойством display: block.
+            prevModalDialog.classList.remove('hide');   //Удаляем класс hide со свойством display: none.
+            closeModal();                               //Закрытие окна с формой ввода контактов, что бы клиент увидел после блока с благодаоностью стартовую страницу, а не снова форму ввода.
+        }, 4000);
+    }
+
+
+
 });

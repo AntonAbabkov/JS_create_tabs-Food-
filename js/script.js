@@ -300,6 +300,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-
+    fetch('db.json')                    //Обращаемся к файлу с БД
+        .then(data => data.json())      //Переводим в обычный js объект
+        .then(res => console.log(res)); //Получаем объект с данными, которые уже можно получить и использовать
 
 });

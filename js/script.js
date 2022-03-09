@@ -157,62 +157,72 @@ window.addEventListener('DOMContentLoaded', () => {
             this.price = this.price * this.transfer;
         }
 
-        render() {              //Метод для создания карточки
+        render() {                                         //Метод для создания карточки
             const element = document.createElement('div'); //Создаётся переменная с дивом
 
-            if (this.classes.length == 0) {         //Проверкка, передавались-ли классы клиентом.
-                this.element = 'menu__item';        //Назначение класса по умолчанию.
-                element.classList.add(this.element);//Добавление класса по умолчанию к элементу.
+            if (this.classes.length == 0) {                //Проверкка, передавались-ли классы клиентом.
+                this.element = 'menu__item';               //Назначение класса по умолчанию.
+                element.classList.add(this.element);       //Добавление класса по умолчанию к элементу.
             } else {
                 this.classes.forEach(className => element.classList.add(className)); //Если клиент ввёл классы, добавление этих классов.
             }
             
             element.innerHTML = ` 
-            <img src=${this.src} alt=${this.alt}>
-            <h3 class="menu__item-subtitle">${this.title}</h3>
-            <div class="menu__item-descr">${this.descr}</div>
-            <div class="menu__item-divider"></div>
-            <div class="menu__item-price">
-                <div class="menu__item-cost">Цена:</div>
-                <div class="menu__item-total"><span>${this.price}</span> руб/день</div>
-            </div>
-            `; //Вставляется шаблон
+                <img src=${this.src} alt=${this.alt}>
+                <h3 class="menu__item-subtitle">${this.title}</h3>
+                <div class="menu__item-descr">${this.descr}</div>
+                <div class="menu__item-divider"></div>
+                <div class="menu__item-price">
+                    <div class="menu__item-cost">Цена:</div>
+                    <div class="menu__item-total"><span>${this.price}</span> руб/день</div>
+                </div>
+                `; //Вставляется шаблон
 
             this.parent.append(element); //Добавление дива на страницу
         }
     }
 
-    //Применяем созданный класс
-    new MenuCard(
-        "img/tabs/vegy.jpg",
-        "vegy",
-        'Меню "Фитнес"',
-        'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        `.menu .container`,
-        /* 'menu__item' */
-    ).render();
 
-    new MenuCard(
-        "img/tabs/elite.jpg",
-        "elite",
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-        14,
-        `.menu .container`,
-        'menu__item'
-    ).render();
+    const getResource = async (url) => {              //Создаём переменную с функцией, которая будет отвечать за получение данных из БД. Async перед аргументами используется в паре с await, что бы наш асинхронный код обязательно дождался загрузки другого кода. await указываем в коде, который нужно дождаться.
+        const res = await fetch(url);                 //Поскольку мы только получаем данные из БД, найтройки запроса можно не указывать, url достаточно.
 
-    new MenuCard(
-        "img/tabs/post.jpg",
-        "post",
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-        21,
-        `.menu .container`,
-        'menu__item',
-        'big'
-    ).render();
+        if (!res.ok) {                                                        //Проверка, для устранения бага, когда fetch не фиксирует ошибку.
+            throw new Error(`Could not fetch ${url}, status: ${res.status}`); //throw позволяет генерировать исключения, определяемые пользователем. Конструктор Error создаёт объект ошибки. Экземпляры объекта Error выбрасываются при возникновении ошибок во время выполнения. Объект Error также может использоваться в качестве базового для пользовательских исключений. 
+        }
+
+        return await res.json();                      //Возвращаем данные res в формате json
+    };
+
+    getResource('http://localhost:3000/menu')             //Вызываем созданную функцию, для выгрузки данных из БД на страницу
+        .then(data => {                                   //Назначаем обработку
+            data.forEach(({img, altimg, title, descr, price}) => {               //Перебераем свойства массива и деструктуризируем его по отдельным частям
+                new MenuCard(img, altimg, title, descr, price, `.menu .container`).render();         //Конструктор new MenuCard() создаёт новую карточку на странице с переданными свойствами и при помощи метода render выкладываем товары на сайт. Последним аргументом у MenuCard указывается родитель, куда будем постить новую карточку
+            });
+        });
+
+/*         //альтернативный вариант функции, которая будет постить данные
+        getResource('http://localhost:3000/menu')
+            .then(data => {
+                createCard(data);
+            });
+        function createCard(data) {
+            data.forEach(({img, altimg, title, descr, price}) => {
+                const element = document.createElement('div');
+                element.classList.add('menu__item');
+                element.innerHTML = ` 
+                    <img src=${img} alt=${altimg}>
+                    <h3 class="menu__item-subtitle">${title}</h3>
+                    <div class="menu__item-descr">${descr}</div>
+                    <div class="menu__item-divider"></div>
+                    <div class="menu__item-price">
+                        <div class="menu__item-cost">Цена:</div>
+                        <div class="menu__item-total"><span>${price}</span> руб/день</div>
+                    </div>
+                `;
+
+                document.querySelector('.menu .container').append(element);
+            });
+        } */
 
     //Код для отправки информации из форм на сервер (php)
     const forms = document.querySelectorAll('form'); //Получаем все формы по тегу form
@@ -224,11 +234,25 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     forms.forEach(item => { //при помощи цикла применяем функцию postData к каждой форме
-        postData(item);
+        bindPostData(item);
     });
 
+    //Fetch API предоставляет интерфейс JS для работы с запросами и ответами HTTP. Он также предоставляет глобальный метод fetch() (en-US), который позволяет легко и логично получать ресурсы по сети асинхронно.
+    //Сам fetch запрос. FETCH работает на промисах (Promise)
+
+    const postData = async (url, data) => {                //Создаём переменную с функцией, которая будет отвечать за постинг данных. Async перед аргументами используется в паре с await, что бы наш асинхронный код обязательно дождался загрузки другого кода. await указываем в коде, который нужно дождаться.
+        const res = await fetch(url, {                     //Создал переменную, в которую поместиться Promise от метода fetch, который посылает запрос на сервер
+            method: 'POST',                                //Метод POST или GET
+            body: data,                                    //Body. Указали, что отправляем.
+            headers: {                                     //Headers. Заголовки желательно тоже всегда указывать, что бы было понятно, что мы отправляем.
+                'Content-type': 'application/json'
+            }
+        });
+        return await res.json();                           //Возвращаем данные res в формате json
+    };
+
     //Функция отвечающая за постинг данных
-    function postData(form) {
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => { 
             e.preventDefault();                                 //используем событие, что бы отменить стандарное поведение браузера
 
@@ -242,30 +266,23 @@ window.addEventListener('DOMContentLoaded', () => {
 
             form.insertAdjacentElement('afterend', statusMessage); //Метод insertAdjacentElement позволяет вставить элемент в любое место страницы. первое свойство - куда вставляем, второе - что вставляем.         
 
-            const formData = new FormData(form);    //Создаём перемунную, в которую помещяем конструктор FormData. FormData - это специальный объект, который позволяет собрать все данные с определённой формы, которую заполнил пользователь.
+            const formData = new FormData(form);    //Создаём перемунную, в которой будут данные форм. FormData - это специальный объект, который позволяет собрать все данные с определённой формы, которую заполнил пользователь.
 
-            const object = {};                      //Создаём объект, в который будем помещать полученные данные для дальнейшей конвертации в формат JSON
-            formData.forEach(function(value, key){  //Перебираем formData
-                object[key] = value;                //Обращаемся к пустому объекту object и передаём в него данные. В итоге получается обычный объект, который можно свободно конвертировать в JSON
-            });
+            const json  = JSON.stringify(Object.fromEntries(formData.entries())); //Переменная для хранения и обработки данных с форм. Для дальгейшей передачи в БД
+            //formData.entries() - превращает данные в массив с массивами
+            //Object.fromEntries - превращает в классический объект
+            //JSON.stringify - превращает в JSON формат
 
-            //Fetch API предоставляет интерфейс JS для работы с запросами и ответами HTTP. Он также предоставляет глобальный метод fetch() (en-US), который позволяет легко и логично получать ресурсы по сети асинхронно.
-            //Сам fetch запрос. FETCH работает на промисах (Promise)
-            fetch('server.php', { //Настройки запроса указываются в объекте после URL. В этом объекте должно быть минимум 2 свойства. Method и Body
-                method: 'POST',                                   //Метод POST или GET
-                body: JSON.stringify(object),                     //Body. Указали, что отправляем.
-                headers: {                                     //Headers. Заголовки желательно тоже всегда указывать, что бы было понятно, что мы отправляем.
-                    'Content-type': 'application/json'
-                }
-            })
-            .then(data => data.text())
-            .then(data => { //Действия при удачно выполненном запросе
+            //Вызываем функцию созданную в строке 233
+            postData('http://localhost:3000/requests', json)   //url и body json(Куда и что отправляем)                      
+            //Дальше начинаем обработку данных при помощи метода then, так как fetch возвращает Promise
+            .then(data => {                                  //Действия при удачно выполненном запросе
                 console.log(data);
                 showThaksModal(message.success);             //Выводим сообщение о успехе
                 statusMessage.remove();                      //Удаление сообщения
-            }).catch(() => { //Действия при неудачном запросе
+            }).catch(() => {                                 //Действия при неудачном запросе
                 showThaksModal(message.fail);                //Выводим сообщение о ошибке
-            }).finally(() => { //Действия в самом конце.
+            }).finally(() => {                               //Действия в самом конце.
                 form.reset();                                //Метод reset очищяет форму
             });
         });
@@ -300,8 +317,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-    fetch('db.json')                    //Обращаемся к файлу с БД
+/*     fetch('http://localhost:3000/menu') //Обращаемся к файлу с БД
         .then(data => data.json())      //Переводим в обычный js объект
-        .then(res => console.log(res)); //Получаем объект с данными, которые уже можно получить и использовать
+        .then(res => console.log(res)); //Получаем объект с данными, которые уже можно получить и использовать */
 
 });

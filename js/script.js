@@ -196,7 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
     getResource('http://localhost:3000/menu')             //Вызываем созданную функцию, для выгрузки данных из БД на страницу
         .then(data => {                                   //Назначаем обработку
             data.forEach(({img, altimg, title, descr, price}) => {               //Перебераем свойства массива и деструктуризируем его по отдельным частям
-                new MenuCard(img, altimg, title, descr, price, `.menu .container`).render();         //Конструктор new MenuCard() создаёт новую карточку на странице с переданными свойствами и при помощи метода render выкладываем товары на сайт. Последним аргументом у MenuCard указывается родитель, куда будем постить новую карточку
+                new MenuCard(img, altimg, title, descr, price, ".menu .container").render();         //Конструктор new MenuCard() создаёт новую карточку на странице с переданными свойствами и при помощи метода render выкладываем товары на сайт. Последним аргументом у MenuCard указывается родитель, куда будем постить новую карточку
             });
         });
 
@@ -317,8 +317,39 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-/*     fetch('http://localhost:3000/menu') //Обращаемся к файлу с БД
-        .then(data => data.json())      //Переводим в обычный js объект
-        .then(res => console.log(res)); //Получаем объект с данными, которые уже можно получить и использовать */
+/*Слайдер */
+    let slideIndex = 1; //Переменная для счётчика слайдов
+    const slides = document.querySelectorAll('.offer__slide'),      //Переменная со слайдами
+            prev = document.querySelector('.offer__slider-prev'),   //Стрелка назад
+            next = document.querySelector('.offer__slider-next');   //Стрелка вперёд
+    
+    
 
+    showSlides(slideIndex); 
+
+    //Функция для показа слайдов
+    function showSlides(n) {
+        if (n > slides.length) {        //Если текущий номер слайда больше кол-ва самих фото
+            slideIndex = 1;             //Включаем первый слайд
+        }
+        if (n < 1) {                    //Если текущий номер слайда принял отрицательное значение
+            slideIndex = slides.length; //включаем последний слайд
+        }
+
+        slides.forEach(item => item.style.display = 'none'); //Перебором меняем инлайн стиль у каждого слайда, что бы их все скрыть.
+        
+        slides[slideIndex - 1].style.display = 'block'; //Включаем нужный слайд
+    }
+
+    function plusSlides(n) {        //Функция - счётчик слайдов. 
+        showSlides(slideIndex += n);
+    }
+
+    prev.addEventListener('click', () => { //Событие для стрелки назад
+        plusSlides(-1);                    //вызов функции с аргументом -1. В итоге уменьшит slideIndex на 1 и функцция showSlides покажет нужный слайд
+    })
+
+    next.addEventListener('click', () => { //Событие для стрелки вперёд
+        plusSlides(1);                     //вызов функции с аргументом 1. В итоге увеличит slideIndex на 1 и функцция showSlides покажет нужный слайд
+    })
 });

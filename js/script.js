@@ -317,16 +317,21 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-/*Слайдер */
+/* slick Слайдер */
     let slideIndex = 1; //Переменная для счётчика слайдов
-    const slides = document.querySelectorAll('.offer__slide'),      //Переменная со слайдами
+    const slides = document.querySelectorAll('.offer__slide'),      //Переменная со всеми слайдами
             prev = document.querySelector('.offer__slider-prev'),   //Стрелка назад
-            next = document.querySelector('.offer__slider-next');   //Стрелка вперёд
-    
-    
+            next = document.querySelector('.offer__slider-next'),   //Стрелка вперёд
+            total = document.querySelector('#total'),               //Счётчик, показывает сколько всего слайдов
+            current = document.querySelector('#current');           //Счётчик, показывает номер текущего слайда
 
-    showSlides(slideIndex); 
-
+    //Проверка, для установки максимального кол-ва слайдов
+    if (slides.length < 10) {
+        total.textContent = `0${slides.length}`; //для установки 0 перед числами, меньше 10
+    } else {
+        total.textContent = slides.length;
+    }
+     
     //Функция для показа слайдов
     function showSlides(n) {
         if (n > slides.length) {        //Если текущий номер слайда больше кол-ва самих фото
@@ -339,7 +344,16 @@ window.addEventListener('DOMContentLoaded', () => {
         slides.forEach(item => item.style.display = 'none'); //Перебором меняем инлайн стиль у каждого слайда, что бы их все скрыть.
         
         slides[slideIndex - 1].style.display = 'block'; //Включаем нужный слайд
+
+        //Проверка, для установки номера текущего слайда
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
     }
+
+    showSlides(slideIndex);
 
     function plusSlides(n) {        //Функция - счётчик слайдов. 
         showSlides(slideIndex += n);

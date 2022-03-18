@@ -317,9 +317,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-/* slick Слайдер */
+/*Слайдер */
     let slideIndex = 1; //Переменная для счётчика слайдов
     const slides = document.querySelectorAll('.offer__slide'),      //Переменная со всеми слайдами
+            slider = document.querySelector('.offer__slider'),      //Переменная с общим родителем.
             prev = document.querySelector('.offer__slider-prev'),   //Стрелка назад
             next = document.querySelector('.offer__slider-next'),   //Стрелка вперёд
             total = document.querySelector('#total'),               //Счётчик, показывает сколько всего слайдов
@@ -332,13 +333,88 @@ window.addEventListener('DOMContentLoaded', () => {
         total.textContent = slides.length;
     }
      
+    //Создаём "точки"
+    //Меняем свойство position на relative, что бы потомки с position = absolute отображались корректно
+    slider.style.position = 'relative';
+
+    //Создаём переменную, в которую помещаем новый блок под индикатор нумерации фото
+    const indicators = document.createElement('ol'), //ol - тег списка
+                dots = [];                           //Создаём пустой массив, что бы потом добавить в него точки
+
+    //Добавляем новому блоку класс
+    indicators.classList.add('carousel-indicators');
+
+    //Добавляем новому блоку нужные CSS свойства
+    indicators.style.cssText = `
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 15;
+        display: flex;
+        justify-content: center;
+        margin-right: 15%;
+        margin-left: 15%;
+        list-style: none;
+    `;
+
+    slider.append(indicators); //Добавляем созданный список, пока пустой, к окну просмотра слайдера.
+    
+    //Теперь нужно определить, сколько точек должно быть.
+    for (let i = 0; i < slides.length; i ++) {    //Запускаем цикл
+        const dot = document.createElement('li'); //Создаётся точка (list item)
+
+        //Что бы привязать точки к определённым слайдам, добавляем атрибут.
+        dot.setAttribute('data-slide-to', i + 1); //Каждой точке присваивается атрибут и номер, начиная с 1
+
+        //Каждой точке присваиваем CSS свойства.
+        dot.style.cssText = `
+            box-sizing: content-box;
+            flex: 0 1 auto;
+            width: 30px;
+            height: 6px;
+            margin-right: 3px;
+            margin-left: 3px;
+            cursor: pointer;
+            background-color: #fff;
+            background-clip: padding-box;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            opacity: .5;
+            transition: opacity .6s ease;     
+        `;
+        
+        if (i == 0) {               //При первой итерации (при входе на страницу)
+            dot.style.opacity = 1;  //Подсвечиваем первую точку
+        }
+        
+        indicators.append(dot); //Добавляем созданную точку в ранее созданный список (indicators)
+        dots.push(dot);         //Так же помещаем созданную точку в массив, который создали в 360 строке
+    }
+    
+    function zeroCheck() { //Функция - проверка для счётчика слайдов, выводить или нет 0 перед числом slideIndex
+        if (slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+    };
+
+    function dotsOnOff() {
+        dots.forEach(dot => dot.style.opacity = '.5'); //С помощью перебора отключаем подсветку всех точек.
+        dots[slideIndex - 1].style.opacity = 1;        //Подсвечиваем только нужную точку. Обращаемся к нужному элументу блягодаря slideIndex
+    };
+
+
     //Функция для показа слайдов
     function showSlides(n) {
         if (n > slides.length) {        //Если текущий номер слайда больше кол-ва самих фото
-            slideIndex = 1;             //Включаем первый слайд
+            slideIndex = 1;             //Присваиваем 1
+            dotsOnOff();
         }
         if (n < 1) {                    //Если текущий номер слайда принял отрицательное значение
-            slideIndex = slides.length; //включаем последний слайд
+            slideIndex = slides.length; //Присваиваем число равное макс. кол-ву фото.
+            dotsOnOff(); 
         }
 
         slides.forEach(item => item.style.display = 'none'); //Перебором меняем инлайн стиль у каждого слайда, что бы их все скрыть.
@@ -346,14 +422,10 @@ window.addEventListener('DOMContentLoaded', () => {
         slides[slideIndex - 1].style.display = 'block'; //Включаем нужный слайд
 
         //Проверка, для установки номера текущего слайда
-        if (slides.length < 10) {
-            current.textContent = `0${slideIndex}`;
-        } else {
-            current.textContent = slideIndex;
-        }
+        zeroCheck();
     }
 
-    showSlides(slideIndex);
+    showSlides(slideIndex); //На этом этапе показывается только 1 слайд
 
     function plusSlides(n) {        //Функция - счётчик слайдов. 
         showSlides(slideIndex += n);
@@ -361,9 +433,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
     prev.addEventListener('click', () => { //Событие для стрелки назад
         plusSlides(-1);                    //вызов функции с аргументом -1. В итоге уменьшит slideIndex на 1 и функцция showSlides покажет нужный слайд
+        dotsOnOff();
     })
 
     next.addEventListener('click', () => { //Событие для стрелки вперёд
         plusSlides(1);                     //вызов функции с аргументом 1. В итоге увеличит slideIndex на 1 и функцция showSlides покажет нужный слайд
+        dotsOnOff();
+    })
+
+    //Теперь нужно на каждую точку повесить обработчик событий, что бы можно было переключатся между слайдами при помощи клика на определённую точку
+    dots.forEach(dot => {                                               //Используем перебор
+        dot.addEventListener('click', (e) => {                          //Добавляем событие при клике каждой точке
+            const slideTo = e.target.getAttribute('data-slide-to');     //Создаём переменную и добавляем её атрибут перебераемой точки
+
+            slideIndex = slideTo;                                       //В slideindex помещается значение slideTo
+            showSlides(slideIndex);
+            dotsOnOff();
+        })
     })
 });
